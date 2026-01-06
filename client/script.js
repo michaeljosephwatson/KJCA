@@ -8,48 +8,146 @@ let pieces = {
   a7: "b-pawn", b7: "b-pawn", c7: "b-pawn", d7: "b-pawn",
   e7: "b-pawn", f7: "b-pawn", g7: "b-pawn", h7: "b-pawn",
 };
+
 let history = [];
 let selectedPiece = null;
 let selectedSquare = null;
+let currentTurn = "w";
+let lastMove = null; // To track moves for en passant
 
-// Attach listeners
-function attachSquareClickListeners() {
-  const squares = document.querySelectorAll("[id^='square-']");
-  squares.forEach((squareEl) => {
-    squareEl.addEventListener("click", () => {
-      const img = squareEl.querySelector("img");
-
-      if (selectedPiece) {
-        history.push(JSON.parse(JSON.stringify(pieces)));
-        if (img) img.remove();
-
-        // Move selected piece
-        squareEl.appendChild(selectedPiece);
-
-        // Update pieces object
-        const oldSquare = selectedSquare.id.replace("square-", "");
-        const newSquare = squareEl.id.replace("square-", "");
-        pieces[newSquare] = pieces[oldSquare];
-        delete pieces[oldSquare];
-
-        selectedSquare.classList.remove("bg-orange-400");
-        selectedPiece = null;
-        selectedSquare = null;
-
-      } else if (img) {
-        selectedPiece = img;
-        selectedSquare = squareEl;
-        squareEl.classList.add("bg-orange-400");
-      }
-    });
-  });
+function squareToCoords(square) {
+  const file = square[0];
+  const rank = square[1];
+  return [file.charCodeAt(0) - "a".charCodeAt(0), parseInt(rank) - 1];
 }
 
-// Render board pieces
+function coordsToSquare(x, y) {
+  return String.fromCharCode("a".charCodeAt(0) + x) + (y + 1);
+}
+
+function isPathClear(from, to, pieces) {
+  const [x1, y1] = squareToCoords(from);
+  const [x2, y2] = squareToCoords(to);
+  const dx = Math.sign(x2 - x1);
+  const dy = Math.sign(y2 - y1);
+  let x = x1 + dx;
+  let y = y1 + dy;
+  while (x !== x2 || y !== y2) {
+    if (pieces[coordsToSquare(x, y)]) return false;
+    x += dx;
+    y += dy;
+  }
+  return true;
+}
+
+// --- Pawn move with en passant support ---
+function validatePawnMove(color, dx, dy, from, to, pieces, targetPiece) {
+  const direction = color === "w" ? 1 : -1;
+  const startRank = color === "w" ? 1 : 6;
+  const [x1, y1] = squareToCoords(from);
+  const [x2, y2] = squareToCoords(to);
+
+  // Regular move forward
+  if (dx === 0 && dy === direction && !targetPiece) return true;
+  // Double move from start
+  if (dx === 0 && dy === 2 * direction && y1 === startRank) {
+    const intermediate = coordsToSquare(x1, y1 + direction);
+    if (!pieces[intermediate] && !targetPiece) return true;
+  }
+  // Capture
+  if (Math.abs(dx) === 1 && dy === direction && targetPiece) return true;
+
+  // En passant
+  if (Math.abs(dx) === 1 && dy === direction && !targetPiece && lastMove) {
+    const [lx1, ly1] = squareToCoords(lastMove.from);
+    const [lx2, ly2] = squareToCoords(lastMove.to);
+    const movedPiece = lastMove.piece;
+    // Last move must be opponent pawn moving 2 squares
+    if (
+      movedPiece === (color === "w" ? "b-pawn" : "w-pawn") &&
+      Math.abs(ly2 - ly1) === 2 &&
+      ly2 === y1 &&
+      lx2 === x2
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function validateRookMove(dx, dy, from, to, pieces) {
+  if (dx !== 0 && dy !== 0) return false;
+  return isPathClear(from, to, pieces);
+}
+
+function validateKnightMove(dx, dy) {
+  return (Math.abs(dx) === 1 && Math.abs(dy) === 2) || (Math.abs(dx) === 2 && Math.abs(dy) === 1);
+}
+
+function validateBishopMove(dx, dy, from, to, pieces) {
+  if (Math.abs(dx) !== Math.abs(dy)) return false;
+  return isPathClear(from, to, pieces);
+}
+
+function validateQueenMove(dx, dy, from, to, pieces) {
+  if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) {
+    return isPathClear(from, to, pieces);
+  }
+  return false;
+}
+
+function validateKingMove(dx, dy) {
+  return Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
+}
+
+function isValidMove(pieceName, from, to, pieces) {
+  const [x1, y1] = squareToCoords(from);
+  const [x2, y2] = squareToCoords(to);
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const targetPiece = pieces[to] || null;
+  const color = pieceName.startsWith("w") ? "w" : "b";
+
+  if (targetPiece && targetPiece.startsWith(color)) return false;
+
+  const type = pieceName.split("-")[1];
+  switch (type) {
+    case "pawn": return validatePawnMove(color, dx, dy, from, to, pieces, targetPiece);
+    case "rook": return validateRookMove(dx, dy, from, to, pieces);
+    case "knight": return validateKnightMove(dx, dy);
+    case "bishop": return validateBishopMove(dx, dy, from, to, pieces);
+    case "queen": return validateQueenMove(dx, dy, from, to, pieces);
+    case "king": return validateKingMove(dx, dy);
+    default: return false;
+  }
+}
+
+function isKingInCheck(color, pieces) {
+  let kingSquare;
+  for (const square in pieces) {
+    if (pieces[square] === `${color}-king`) {
+      kingSquare = square;
+      break;
+    }
+  }
+  if (!kingSquare) return true;
+
+  const opponentColor = color === "w" ? "b" : "w";
+  for (const square in pieces) {
+    const piece = pieces[square];
+    if (piece.startsWith(opponentColor)) {
+      if (isValidMove(piece, square, kingSquare, pieces)) return true;
+    }
+  }
+  return false;
+}
+
 function renderPieces(pieceMap) {
   const squares = document.querySelectorAll("[id^='square-']");
   squares.forEach((squareEl) => {
     squareEl.innerHTML = "";
+    squareEl.classList.remove("bg-orange-400", "bg-green-400");
   });
 
   for (const square in pieceMap) {
@@ -62,15 +160,107 @@ function renderPieces(pieceMap) {
   }
 }
 
-// Undo button
+function highlightValidMoves(fromSquare, pieceName, pieces) {
+  const squares = document.querySelectorAll("[id^='square-']");
+  squares.forEach(sq => {
+    const sqName = sq.id.replace("square-", "");
+    if (sqName !== fromSquare) {
+      const testPieces = JSON.parse(JSON.stringify(pieces));
+      delete testPieces[fromSquare];
+      testPieces[sqName] = pieceName;
+
+      if (isValidMove(pieceName, fromSquare, sqName, pieces) && !isKingInCheck(pieceName.startsWith("w") ? "w" : "b", testPieces)) {
+        sq.classList.add("bg-green-400");
+      }
+    }
+  });
+}
+
+function attachSquareClickListeners() {
+  const squares = document.querySelectorAll("[id^='square-']");
+  squares.forEach((squareEl) => {
+    squareEl.addEventListener("click", () => {
+      const img = squareEl.querySelector("img");
+      const clickedSquare = squareEl.id.replace("square-", "");
+
+      if (selectedPiece) {
+        const oldSquare = selectedSquare.id.replace("square-", "");
+        const newSquare = clickedSquare;
+        const pieceName = pieces[oldSquare];
+
+        const testPieces = JSON.parse(JSON.stringify(pieces));
+        delete testPieces[oldSquare];
+        testPieces[newSquare] = pieceName;
+
+        // Handle en passant capture
+        const [x1, y1] = squareToCoords(oldSquare);
+        const [x2, y2] = squareToCoords(newSquare);
+        if (
+          pieceName.endsWith("pawn") &&
+          Math.abs(x2 - x1) === 1 &&
+          !pieces[newSquare] &&
+          lastMove
+        ) {
+          const lastPiece = lastMove.piece;
+          const [lx1, ly1] = squareToCoords(lastMove.from);
+          const [lx2, ly2] = squareToCoords(lastMove.to);
+          if (
+            lastPiece === (pieceName.startsWith("w") ? "b-pawn" : "w-pawn") &&
+            Math.abs(ly2 - ly1) === 2 &&
+            lx2 === x2 &&
+            ly2 === y1
+          ) {
+            const capturedPawnSquare = coordsToSquare(x2, y1);
+            delete testPieces[capturedPawnSquare];
+          }
+        }
+
+        if (isValidMove(pieceName, oldSquare, newSquare, pieces) && !isKingInCheck(currentTurn, testPieces)) {
+          // Save current state BEFORE moving for undo
+          history.push({ pieces: JSON.parse(JSON.stringify(pieces)), turn: currentTurn, lastMove });
+
+          // Apply move
+          pieces = testPieces;
+          if (img) img.remove();
+          squareEl.appendChild(selectedPiece);
+
+          // Update lastMove for en passant
+          lastMove = { piece: pieceName, from: oldSquare, to: newSquare };
+
+          currentTurn = currentTurn === "w" ? "b" : "w";
+        }
+
+        selectedSquare.classList.remove("bg-orange-400");
+        document.querySelectorAll("[id^='square-']").forEach(sq => sq.classList.remove("bg-green-400"));
+        selectedPiece = null;
+        selectedSquare = null;
+
+      } else if (img) {
+        const pieceName = pieces[clickedSquare];
+        if (!pieceName.startsWith(currentTurn)) return;
+
+        selectedPiece = img;
+        selectedSquare = squareEl;
+        squareEl.classList.add("bg-orange-400");
+        highlightValidMoves(clickedSquare, pieceName, pieces);
+      }
+    });
+  });
+}
+
+// --- Undo button ---
 document.getElementById("undo-button").addEventListener("click", () => {
   if (history.length === 0) return;
-
-  pieces = history.pop();
+  const lastState = history.pop();
+  pieces = lastState.pieces;
+  currentTurn = lastState.turn;
+  lastMove = lastState.lastMove;
   renderPieces(pieces);
   selectedPiece = null;
   selectedSquare = null;
 });
 
+// --- Initialize ---
 attachSquareClickListeners();
 renderPieces(pieces);
+    
