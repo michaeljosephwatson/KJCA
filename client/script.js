@@ -13,7 +13,7 @@ let history = [];
 let selectedPiece = null;
 let selectedSquare = null;
 let currentTurn = "w";
-let lastMove = null; // To track moves for en passant
+let lastMove = null; // For en passant
 
 function squareToCoords(square) {
   const file = square[0];
@@ -40,16 +40,15 @@ function isPathClear(from, to, pieces) {
   return true;
 }
 
-// --- Pawn move with en passant support ---
 function validatePawnMove(color, dx, dy, from, to, pieces, targetPiece) {
   const direction = color === "w" ? 1 : -1;
   const startRank = color === "w" ? 1 : 6;
   const [x1, y1] = squareToCoords(from);
   const [x2, y2] = squareToCoords(to);
 
-  // Regular move forward
+  // Forward 1
   if (dx === 0 && dy === direction && !targetPiece) return true;
-  // Double move from start
+  // Forward 2 from start
   if (dx === 0 && dy === 2 * direction && y1 === startRank) {
     const intermediate = coordsToSquare(x1, y1 + direction);
     if (!pieces[intermediate] && !targetPiece) return true;
@@ -62,15 +61,12 @@ function validatePawnMove(color, dx, dy, from, to, pieces, targetPiece) {
     const [lx1, ly1] = squareToCoords(lastMove.from);
     const [lx2, ly2] = squareToCoords(lastMove.to);
     const movedPiece = lastMove.piece;
-    // Last move must be opponent pawn moving 2 squares
     if (
       movedPiece === (color === "w" ? "b-pawn" : "w-pawn") &&
       Math.abs(ly2 - ly1) === 2 &&
       ly2 === y1 &&
       lx2 === x2
-    ) {
-      return true;
-    }
+    ) return true;
   }
 
   return false;
@@ -91,9 +87,7 @@ function validateBishopMove(dx, dy, from, to, pieces) {
 }
 
 function validateQueenMove(dx, dy, from, to, pieces) {
-  if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) {
-    return isPathClear(from, to, pieces);
-  }
+  if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) return isPathClear(from, to, pieces);
   return false;
 }
 
@@ -192,9 +186,11 @@ function attachSquareClickListeners() {
         delete testPieces[oldSquare];
         testPieces[newSquare] = pieceName;
 
-        // Handle en passant capture
+        // --- Handle en passant ---
         const [x1, y1] = squareToCoords(oldSquare);
         const [x2, y2] = squareToCoords(newSquare);
+        let enPassantCaptured = null;
+
         if (
           pieceName.endsWith("pawn") &&
           Math.abs(x2 - x1) === 1 &&
@@ -210,23 +206,27 @@ function attachSquareClickListeners() {
             lx2 === x2 &&
             ly2 === y1
           ) {
-            const capturedPawnSquare = coordsToSquare(x2, y1);
+            const capturedPawnSquare = coordsToSquare(x2, y1); // square behind landing pawn
             delete testPieces[capturedPawnSquare];
+            enPassantCaptured = capturedPawnSquare; // Save to remove DOM
           }
         }
 
         if (isValidMove(pieceName, oldSquare, newSquare, pieces) && !isKingInCheck(currentTurn, testPieces)) {
-          // Save current state BEFORE moving for undo
+          // Save state before move
           history.push({ pieces: JSON.parse(JSON.stringify(pieces)), turn: currentTurn, lastMove });
 
-          // Apply move
           pieces = testPieces;
           if (img) img.remove();
           squareEl.appendChild(selectedPiece);
 
-          // Update lastMove for en passant
-          lastMove = { piece: pieceName, from: oldSquare, to: newSquare };
+          // Remove en passant captured piece from DOM
+          if (enPassantCaptured) {
+            const capturedEl = document.getElementById(`square-${enPassantCaptured}`).querySelector("img");
+            if (capturedEl) capturedEl.remove();
+          }
 
+          lastMove = { piece: pieceName, from: oldSquare, to: newSquare };
           currentTurn = currentTurn === "w" ? "b" : "w";
         }
 
@@ -263,4 +263,3 @@ document.getElementById("undo-button").addEventListener("click", () => {
 // --- Initialize ---
 attachSquareClickListeners();
 renderPieces(pieces);
-    
