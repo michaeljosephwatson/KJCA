@@ -24,6 +24,7 @@
 
         <main class="flex-grow bg-gray-100 p-6">
             <div class="max-w-5xl mx-auto flex justify-center">
+              
                 <!-- Chess board container -->
                 <div id="chessboard"
                 class="grid grid-cols-8 grid-rows-8 w-96 h-96 border-4 border-gray-800">
@@ -108,9 +109,14 @@
                     <div id="square-g1" class="bg-gray-500 flex items-center justify-center"></div>
                     <div id="square-h1" class="bg-white flex items-center justify-center"></div>
                 </div>
+
+                <!-- Back button -->
+                <button id="undo-button" class="p-2 ml-4 bg-gray-600 text-white rounded self-end">
+                    Undo
+                </button>   
+
             </div>
         </main>
-
         
         <script src="./script.js"></script>
     </body>
