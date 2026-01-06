@@ -13,12 +13,11 @@ let history = [];
 let selectedPiece = null;
 let selectedSquare = null;
 let currentTurn = "w";
-let lastMove = null; // For en passant
+let lastMove = null;
+let promotionPending = null; // Track pending promotion
 
 function squareToCoords(square) {
-  const file = square[0];
-  const rank = square[1];
-  return [file.charCodeAt(0) - "a".charCodeAt(0), parseInt(rank) - 1];
+  return [square.charCodeAt(0) - "a".charCodeAt(0), parseInt(square[1]) - 1];
 }
 
 function coordsToSquare(x, y) {
@@ -154,6 +153,30 @@ function renderPieces(pieceMap) {
   }
 }
 
+// --- Show promotion dropdown ---
+function showPromotion(square, color) {
+  const squareEl = document.getElementById(`square-${square}`);
+  const container = document.createElement("div");
+  container.classList.add("promotion-container", "absolute", "flex", "bg-white", "border", "p-1", "gap-1", "z-50");
+
+  ["queen", "rook", "bishop", "knight"].forEach(type => {
+    const img = document.createElement("img");
+    img.src = `./assets/pieces/${color}-${type}.svg`;
+    img.alt = `${color}-${type}`;
+    img.classList.add("w-8", "h-8", "cursor-pointer");
+    img.addEventListener("click", () => {
+      pieces[square] = `${color}-${type}`;
+      renderPieces(pieces);
+      container.remove();
+      promotionPending = null;
+      currentTurn = currentTurn === "w" ? "b" : "w";
+    });
+    container.appendChild(img);
+  });
+
+  squareEl.appendChild(container);
+}
+
 function highlightValidMoves(fromSquare, pieceName, pieces) {
   const squares = document.querySelectorAll("[id^='square-']");
   squares.forEach(sq => {
@@ -172,8 +195,10 @@ function highlightValidMoves(fromSquare, pieceName, pieces) {
 
 function attachSquareClickListeners() {
   const squares = document.querySelectorAll("[id^='square-']");
-  squares.forEach((squareEl) => {
+  squares.forEach(squareEl => {
     squareEl.addEventListener("click", () => {
+      if (promotionPending) return; // Block clicks during promotion
+
       const img = squareEl.querySelector("img");
       const clickedSquare = squareEl.id.replace("square-", "");
 
@@ -186,11 +211,10 @@ function attachSquareClickListeners() {
         delete testPieces[oldSquare];
         testPieces[newSquare] = pieceName;
 
-        // --- Handle en passant ---
+        // En passant
         const [x1, y1] = squareToCoords(oldSquare);
         const [x2, y2] = squareToCoords(newSquare);
         let enPassantCaptured = null;
-
         if (
           pieceName.endsWith("pawn") &&
           Math.abs(x2 - x1) === 1 &&
@@ -206,28 +230,35 @@ function attachSquareClickListeners() {
             lx2 === x2 &&
             ly2 === y1
           ) {
-            const capturedPawnSquare = coordsToSquare(x2, y1); // square behind landing pawn
+            const capturedPawnSquare = coordsToSquare(x2, y1);
             delete testPieces[capturedPawnSquare];
-            enPassantCaptured = capturedPawnSquare; // Save to remove DOM
+            enPassantCaptured = capturedPawnSquare;
           }
         }
 
         if (isValidMove(pieceName, oldSquare, newSquare, pieces) && !isKingInCheck(currentTurn, testPieces)) {
-          // Save state before move
           history.push({ pieces: JSON.parse(JSON.stringify(pieces)), turn: currentTurn, lastMove });
-
           pieces = testPieces;
           if (img) img.remove();
           squareEl.appendChild(selectedPiece);
 
-          // Remove en passant captured piece from DOM
           if (enPassantCaptured) {
             const capturedEl = document.getElementById(`square-${enPassantCaptured}`).querySelector("img");
             if (capturedEl) capturedEl.remove();
           }
 
+          // --- Check for promotion ---
+          const color = pieceName.startsWith("w") ? "w" : "b";
+          const promotionRank = color === "w" ? 7 : 0;
+          const [px, py] = squareToCoords(newSquare);
+          if (pieceName.endsWith("pawn") && py === promotionRank) {
+            promotionPending = newSquare;
+            showPromotion(newSquare, color);
+          } else {
+            currentTurn = currentTurn === "w" ? "b" : "w";
+          }
+
           lastMove = { piece: pieceName, from: oldSquare, to: newSquare };
-          currentTurn = currentTurn === "w" ? "b" : "w";
         }
 
         selectedSquare.classList.remove("bg-orange-400");
@@ -258,6 +289,7 @@ document.getElementById("undo-button").addEventListener("click", () => {
   renderPieces(pieces);
   selectedPiece = null;
   selectedSquare = null;
+  promotionPending = null;
 });
 
 // --- Initialize ---
