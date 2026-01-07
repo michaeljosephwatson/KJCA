@@ -8,7 +8,6 @@ let pieces = {
   a7: "b-pawn", b7: "b-pawn", c7: "b-pawn", d7: "b-pawn",
   e7: "b-pawn", f7: "b-pawn", g7: "b-pawn", h7: "b-pawn",
 };
-
 let history = [];
 let selectedPiece = null;
 let selectedSquare = null;
@@ -18,11 +17,12 @@ let promotionPending = null;
 let movedPieces = new Set();
 
 function squareToCoords(square) {
+  // Converts square to coordinate names
   return [square.charCodeAt(0) - "a".charCodeAt(0), parseInt(square[1]) - 1];
 }
 
 function coordsToSquare(x, y) {
-  // Convert
+  // Converts coordinates to square name
   return String.fromCharCode("a".charCodeAt(0) + x) + (y + 1);
 }
 
@@ -57,6 +57,8 @@ function isSquareAttacked(square, attackerColor, currentPieces) {
 }
 
 function validatePawnMove(color, dx, dy, from, to, pieces, targetPiece) {
+  // Determines if the proposed move is valid for pawns
+
   const direction = color === "w" ? 1 : -1;
   const startRank = color === "w" ? 1 : 6;
   const [x1, y1] = squareToCoords(from);
@@ -84,26 +86,32 @@ function validatePawnMove(color, dx, dy, from, to, pieces, targetPiece) {
 }
 
 function validateRookMove(dx, dy, from, to, pieces) {
+  // Determines if the proposed move is valid for rooks
   if (dx !== 0 && dy !== 0) return false;
   return isPathClear(from, to, pieces);
 }
 
 function validateKnightMove(dx, dy) {
+  // Determines if the proposed move is valid for knights
   return (Math.abs(dx) === 1 && Math.abs(dy) === 2) || (Math.abs(dx) === 2 && Math.abs(dy) === 1);
 }
 
 function validateBishopMove(dx, dy, from, to, pieces) {
+  // Determines if the proposed move is valid for bishops
   if (Math.abs(dx) !== Math.abs(dy)) return false;
   return isPathClear(from, to, pieces);
 }
 
 function validateQueenMove(dx, dy, from, to, pieces) {
+  // Determines if the proposed move is valid for queens
   if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) return isPathClear(from, to, pieces);
   return false;
 }
 
 function validateKingMove(dx, dy, from, to, pieces, color, ignoreCastling) {
-  // Normal move
+  // Determines if the proposed move is valid for pawns
+
+  // Normal
   if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) return true;
 
   // Castling
@@ -119,11 +127,9 @@ function validateKingMove(dx, dy, from, to, pieces, color, ignoreCastling) {
 
     if (!rookPiece || movedPieces.has(rookSquare)) return false;
 
-    // Check path clearance
     const path = isKingside ? [`f${rank}`, `g${rank}`] : [`d${rank}`, `c${rank}`, `b${rank}`];
     for (let sq of path) if (pieces[sq]) return false;
 
-    // Check squares king passes through
     const opponentColor = color === "w" ? "b" : "w";
     const travelSquares = isKingside ? [`f${rank}`, `g${rank}`] : [`d${rank}`, `c${rank}`];
     for (let sq of travelSquares) {
@@ -135,6 +141,8 @@ function validateKingMove(dx, dy, from, to, pieces, color, ignoreCastling) {
 }
 
 function isValidMove(pieceName, from, to, pieces, ignoreCastling = false) {
+  // Determines if the proposed move is valid
+
   const [x1, y1] = squareToCoords(from);
   const [x2, y2] = squareToCoords(to);
   const dx = x2 - x1;
@@ -157,6 +165,8 @@ function isValidMove(pieceName, from, to, pieces, ignoreCastling = false) {
 }
 
 function isKingInCheck(color, pieces) {
+  // Returns if the king is in check
+
   let kingSquare;
   for (const square in pieces) {
     if (pieces[square] === `${color}-king`) {
@@ -169,6 +179,8 @@ function isKingInCheck(color, pieces) {
 }
 
 function renderPieces(pieceMap) {
+  // Renders all the pieces on the board
+
   const squares = document.querySelectorAll("[id^='square-']");
   squares.forEach((squareEl) => {
     squareEl.innerHTML = "";
@@ -187,6 +199,8 @@ function renderPieces(pieceMap) {
 }
 
 function showPromotion(square, color) {
+  // Allows the user to see the promotion list 
+
   const squareEl = document.getElementById(`square-${square}`);
   const container = document.createElement("div");
   container.classList.add("promotion-container", "absolute", "flex", "bg-white", "border", "p-1", "gap-1", "z-50");
@@ -209,16 +223,16 @@ function showPromotion(square, color) {
 }
 
 function highlightValidMoves(fromSquare, pieceName, pieces) {
+  // Highlights the possible moves available per selected piece
+
   const squares = document.querySelectorAll("[id^='square-']");
   squares.forEach(sq => {
     const sqName = sq.id.replace("square-", "");
     if (sqName !== fromSquare) {
       if (isValidMove(pieceName, fromSquare, sqName, pieces)) {
-        // Simple king-in-check test for highlighting
+
         const testPieces = JSON.parse(JSON.stringify(pieces));
         const color = pieceName.startsWith("w") ? "w" : "b";
-        
-        // Manual move for the test
         delete testPieces[fromSquare];
         testPieces[sqName] = pieceName;
         
@@ -231,6 +245,8 @@ function highlightValidMoves(fromSquare, pieceName, pieces) {
 }
 
 function attachSquareClickListeners() {
+  // Attaches listeners to each square in the board
+
   const squares = document.querySelectorAll("[id^='square-']");
   squares.forEach(squareEl => {
     squareEl.addEventListener("click", () => {
@@ -261,7 +277,7 @@ function attachSquareClickListeners() {
             }
         }
 
-        // Handle Castling Move for the "testPieces"
+        // Handle Castling
         if (pieceName.endsWith("king") && Math.abs(x2 - x1) === 2) {
             const rank = currentTurn === "w" ? "1" : "8";
             if (x2 > x1) { // Kingside
@@ -282,7 +298,7 @@ function attachSquareClickListeners() {
           });
 
           pieces = testPieces;
-          movedPieces.add(oldSquare); // Mark piece as moved
+          movedPieces.add(oldSquare);
 
           const color = pieceName.startsWith("w") ? "w" : "b";
           const promotionRank = color === "w" ? 7 : 0;
