@@ -1,5 +1,5 @@
 /**
- * Converts a square string to [x, y] coordinates (0-7).
+ * Converts a square string to [x, y] coordinates
  */
 export function squareToCoords(square) {
   return [square.charCodeAt(0) - "a".charCodeAt(0), parseInt(square[1]) - 1];
@@ -15,7 +15,7 @@ export function coordsToSquare(x, y) {
 
 
 /**
- * Checks if all squares between 'from' and 'to' are empty.
+ * Checks if all squares between 'from' and 'to' are empty
  */
 export function isPathClear(from, to, pieces) {
   const [x1, y1] = squareToCoords(from);
