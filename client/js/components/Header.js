@@ -35,6 +35,8 @@ class MainHeader extends HTMLElement {
           <a href="analysis.html" class="hover:text-blue-400 transition">Analysis</a>
           
           ${this.user ? `
+            <a href="profile.html" class="hover:text-blue-400 transition font-medium">My Profile</a>
+            
             <div class="flex items-center gap-4 border-l border-slate-600 pl-6">
               <span class="text-gray-400 text-sm hidden md:inline font-medium">Hi, ${displayName}</span>
               <button id="logout-btn" class="bg-red-600 px-3 py-1 rounded text-sm hover:bg-red-700 transition">Logout</button>
