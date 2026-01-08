@@ -2,17 +2,19 @@ import { supabase } from './supabaseClient.js';
 
 // DOM Elements
 const tournamentContainer = document.getElementById('tournaments-list');
+const trainingsContainer = document.getElementById('trainings-list');
+const featuredContainer = document.getElementById('featured-tournament');
+const newsContainer = document.getElementById('chess-news-feed');
 const adminControls = document.getElementById('admin-controls');
-const tournamentModal = document.getElementById('tournament-modal');
-const tournamentForm = document.getElementById('tournament-form');
+const postModal = document.getElementById('post-modal');
+const postForm = document.getElementById('post-form');
 const submitBtn = document.getElementById('submit-btn');
 
 /**
- * AUTH: Check if user is an organizer
+ * AUTH: Check permissions
  */
 async function checkOrganizerStatus() {
     const { data: { session } } = await supabase.auth.getSession();
-    
     if (session) {
         const { data: profile } = await supabase
             .from('profiles')
@@ -26,62 +28,88 @@ async function checkOrganizerStatus() {
     }
 }
 
-// Listen for auth state changes (login/logout)
 supabase.auth.onAuthStateChange((event, session) => {
     if (!session) {
         adminControls.classList.add('hidden');
     } else {
         checkOrganizerStatus();
     }
-    // Re-fetch tournaments to update visibility of delete buttons
-    fetchTournaments();
+    refreshAllFeeds();
 });
 
+async function refreshAllFeeds() {
+    await Promise.all([
+        fetchFeaturedTournament(),
+        fetchTournaments(),
+        fetchTrainings(),
+        fetchChessNews()
+    ]);
+}
+
 /**
- * FEED: Load tournaments and display them
+ * FEATURED: Large Hero Tournament
  */
-async function fetchTournaments() {
-    // Get current session to check ownership of cards
+async function fetchFeaturedTournament() {
+    if (!featuredContainer) return;
     const { data: { session } } = await supabase.auth.getSession();
     const currentUserId = session?.user?.id;
 
     const { data, error } = await supabase
         .from('tournaments')
         .select('*')
-        .order('date', { ascending: true });
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true })
+        .limit(1)
+        .single();
 
-    if (error) {
-        tournamentContainer.innerHTML = '<p class="text-center text-red-500">Error loading tournaments.</p>';
+    if (error || !data) {
+        featuredContainer.innerHTML = '<p class="text-gray-500 p-8 text-center border rounded-xl italic">No major events scheduled.</p>';
         return;
     }
 
-    if (data.length === 0) {
-        tournamentContainer.innerHTML = '<p class="text-center text-gray-500">No upcoming tournaments.</p>';
+    const isOwner = currentUserId === data.organizer_id;
+
+    featuredContainer.innerHTML = `
+        <div class="relative group block bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 hover:shadow-blue-100">
+            ${isOwner ? `<button onclick="deleteEntry(${data.id}, '${data.image_url}', 'tournaments')" class="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-full hover:bg-red-700 z-20 shadow-lg transition opacity-0 group-hover:opacity-100">✕</button>` : ''}
+            <img class="w-full h-[400px] object-cover" src="${data.image_url || 'assets/landscape-placeholder.svg'}" alt="Featured">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+            <div class="absolute bottom-0 p-8 text-white w-full">
+                <p class="text-blue-400 font-black mb-2 uppercase tracking-tighter italic">Next Major Event — ${new Date(data.date).toLocaleDateString('en-GB')}</p>
+                <h3 class="text-4xl md:text-5xl font-black news-headline mb-4">${data.title}</h3>
+                <p class="text-slate-200 text-lg line-clamp-2 max-w-3xl">${data.description || 'Kent Junior Chess Premier Event.'}</p>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * TOURNAMENTS: Updated to match Training Card style
+ */
+async function fetchTournaments() {
+    if (!tournamentContainer) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUserId = session?.user?.id;
+
+    const { data } = await supabase.from('tournaments').select('*').gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true });
+
+    if (!data || data.length <= 1) {
+        tournamentContainer.innerHTML = '<p class="text-gray-500 text-sm italic">No additional tournaments.</p>';
         return;
     }
 
-    tournamentContainer.innerHTML = data.map(item => {
-        // Ownership check
+    tournamentContainer.innerHTML = data.slice(1).map(item => {
         const isOwner = currentUserId === item.organizer_id;
-
         return `
-            <div class="relative group block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                ${isOwner ? `
-                    <button 
-                        onclick="deleteTournament(${item.id}, '${item.image_url}')"
-                        class="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700 z-10 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Delete Tournament"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </button>
-                ` : ''}
-                <img class="w-full h-32 object-cover" src="${item.image_url || 'assets/landscape-placeholder.svg'}" alt="Tournament Image">
-                <div class="p-4">
-                    <p class="text-gray-800 font-bold text-lg">${item.title}</p>
-                    <p class="text-blue-600 text-xs font-semibold mb-2">${new Date(item.date).toLocaleDateString('en-GB')}</p>
-                    <p class="text-gray-600 text-sm line-clamp-3">${item.description || 'No description available.'}</p>
+            <div class="relative group block border-b pb-4 hover:bg-white p-2 rounded-lg transition-all">
+                ${isOwner ? `<button onclick="deleteEntry(${item.id}, '${item.image_url}', 'tournaments')" class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-[10px] z-10 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>` : ''}
+                <div class="overflow-hidden rounded-lg mb-3 h-40">
+                    <img class="w-full h-full object-cover group-hover:scale-105 transition duration-500" src="${item.image_url || 'assets/landscape-placeholder.svg'}">
+                </div>
+                <h4 class="font-bold text-lg leading-tight group-hover:text-blue-700">${item.title}</h4>
+                <div class="flex justify-between items-center mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <span>${new Date(item.date).toLocaleDateString('en-GB')}</span>
+                    <span class="text-blue-600">TOURNAMENT</span>
                 </div>
             </div>
         `;
@@ -89,110 +117,135 @@ async function fetchTournaments() {
 }
 
 /**
- * DELETE: Remove tournament and cleanup storage
+ * TRAININGS: Standard card style
  */
-window.deleteTournament = async (id, imageUrl) => {
-    if (!confirm("Are you sure you want to delete this tournament?")) return;
+async function fetchTrainings() {
+    if (!trainingsContainer) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUserId = session?.user?.id;
+
+    const { data } = await supabase.from('trainings').select('*').gte('date', new Date().toISOString().split('T')[0]).order('date', { ascending: true });
+
+    if (!data || data.length === 0) {
+        trainingsContainer.innerHTML = '<p class="text-gray-500 text-sm italic">No training scheduled.</p>';
+        return;
+    }
+
+    trainingsContainer.innerHTML = data.map(item => {
+        const isOwner = currentUserId === item.organizer_id;
+        return `
+            <div class="relative group block border-b pb-4 transition-all hover:bg-white p-2 rounded-lg">
+                ${isOwner ? `<button onclick="deleteEntry(${item.id}, '${item.image_url}', 'trainings')" class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-[10px] z-10 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>` : ''}
+                <div class="overflow-hidden rounded-lg mb-3 h-40">
+                    <img class="w-full h-full object-cover group-hover:scale-105 transition duration-500" src="${item.image_url || 'assets/landscape-placeholder.svg'}">
+                </div>
+                <h4 class="font-bold text-lg leading-tight group-hover:text-blue-700">${item.title}</h4>
+                <div class="flex justify-between items-center mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <span>${new Date(item.date).toLocaleDateString('en-GB')}</span>
+                    <span class="text-blue-600">${item.location || 'KENT'}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * NEWS: TWIC Feed
+ */
+async function fetchChessNews() {
+    if (!newsContainer) return;
+    const rssUrl = 'https://theweekinchess.com/twic-rss-feed';
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
 
     try {
-        // 1. Delete from Database
-        const { error: dbError } = await supabase
-            .from('tournaments')
-            .delete()
-            .eq('id', id);
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        newsContainer.innerHTML = data.items.slice(0, 8).map(article => `
+            <a href="${article.link}" target="_blank" class="block group border-b border-slate-100 pb-3 transition-all hover:bg-slate-50 p-1">
+                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter mb-1">${new Date(article.pubDate).toLocaleDateString('en-GB')}</p>
+                <h4 class="text-sm font-bold leading-snug group-hover:text-blue-600 transition-colors">${article.title}</h4>
+            </a>
+        `).join('');
+    } catch (e) { newsContainer.innerHTML = '<p class="text-xs italic text-gray-400">Feed offline.</p>'; }
+}
 
-        if (dbError) throw dbError;
+/**
+ * MODAL TRIGGERS
+ */
+document.getElementById('add-tournament-btn').onclick = () => {
+    document.getElementById('p-type').value = 'tournaments';
+    document.getElementById('modal-title').innerText = 'New Tournament';
+    document.getElementById('location-field').classList.add('hidden');
+    postModal.classList.remove('hidden');
+};
 
-        // 2. Cleanup Storage if an image was uploaded (don't delete placeholder)
-        if (imageUrl && imageUrl.includes('tournament-images')) {
-            // Extracts the filename from the end of the public URL
-            const fileName = imageUrl.split('/').pop();
-            await supabase.storage
-                .from('tournament-images')
-                .remove([`tournament-photos/${fileName}`]);
-        }
-
-        await fetchTournaments();
-        alert("Tournament deleted successfully.");
-    } catch (err) {
-        console.error(err);
-        alert("Error deleting: " + err.message);
-    }
+document.getElementById('add-training-btn').onclick = () => {
+    document.getElementById('p-type').value = 'trainings';
+    document.getElementById('modal-title').innerText = 'New Training Session';
+    document.getElementById('location-field').classList.remove('hidden');
+    postModal.classList.remove('hidden');
 };
 
 /**
- * MODAL: Controls
+ * SUBMISSION
  */
-document.getElementById('open-modal').onclick = () => tournamentModal.classList.remove('hidden');
-document.getElementById('close-modal').onclick = () => {
-    tournamentModal.classList.add('hidden');
-    tournamentForm.reset();
-};
-
-/**
- * SUBMIT: Upload Image + Save Data with Foreign Key
- */
-tournamentForm.onsubmit = async (e) => {
+postForm.onsubmit = async (e) => {
     e.preventDefault();
-    
     submitBtn.disabled = true;
-    submitBtn.innerText = "Processing...";
+    submitBtn.innerText = "Publishing...";
 
-    const title = document.getElementById('t-title').value;
-    const date = document.getElementById('t-date').value;
-    const description = document.getElementById('t-desc').value;
-    const imageFile = document.getElementById('t-image-file').files[0];
+    const type = document.getElementById('p-type').value;
+    const title = document.getElementById('p-title').value;
+    const date = document.getElementById('p-date').value;
+    const desc = document.getElementById('p-desc').value;
+    const loc = document.getElementById('p-location').value;
+    const imgFile = document.getElementById('p-image-file').files[0];
 
     try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error("No active session found.");
+        let finalImg = 'assets/landscape-placeholder.svg';
 
-        const userId = session.user.id;
-        let finalImageUrl = 'assets/landscape-placeholder.svg';
-
-        if (imageFile) {
-            const fileExt = imageFile.name.split('.').pop();
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-            const filePath = `tournament-photos/${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('tournament-images')
-                .upload(filePath, imageFile);
-
-            if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('tournament-images')
-                .getPublicUrl(filePath);
-            
-            finalImageUrl = publicUrl;
+        if (imgFile) {
+            const fileName = `${Date.now()}-${imgFile.name}`;
+            const { error: upErr } = await supabase.storage.from('tournament-images').upload(`tournament-photos/${fileName}`, imgFile);
+            if (upErr) throw upErr;
+            const { data: { publicUrl } } = supabase.storage.from('tournament-images').getPublicUrl(`tournament-photos/${fileName}`);
+            finalImg = publicUrl;
         }
 
-        const { error: dbError } = await supabase
-            .from('tournaments')
-            .insert([{ 
-                title, 
-                date, 
-                description, 
-                image_url: finalImageUrl,
-                organizer_id: userId 
-            }]);
+        const payload = { title, date, description: desc, image_url: finalImg, organizer_id: session.user.id };
+        if (type === 'trainings') payload.location = loc;
 
-        if (dbError) throw dbError;
+        const { error } = await supabase.from(type).insert([payload]);
+        if (error) throw error;
 
-        tournamentModal.classList.add('hidden');
-        tournamentForm.reset();
-        await fetchTournaments();
-
-    } catch (err) {
-        console.error(err);
-        alert("Error: " + err.message);
-    } finally {
+        postModal.classList.add('hidden');
+        postForm.reset();
+        await refreshAllFeeds();
+    } catch (err) { alert(err.message); } finally {
         submitBtn.disabled = false;
-        submitBtn.innerText = "Create Event";
+        submitBtn.innerText = "Publish to Live Feed";
     }
 };
 
-// Start
+/**
+ * DELETE
+ */
+window.deleteEntry = async (id, imageUrl, table) => {
+    if (!confirm(`Permanently delete from ${table}?`)) return;
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (!error) {
+        if (imageUrl?.includes('tournament-images')) {
+            const fileName = imageUrl.split('/').pop();
+            await supabase.storage.from('tournament-images').remove([`tournament-photos/${fileName}`]);
+        }
+        refreshAllFeeds();
+    }
+};
+
+document.getElementById('close-modal').onclick = () => postModal.classList.add('hidden');
+document.getElementById('close-modal-x').onclick = () => postModal.classList.add('hidden');
+
+// START
+refreshAllFeeds();
 checkOrganizerStatus();
-fetchTournaments();

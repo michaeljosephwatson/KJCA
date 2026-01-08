@@ -7,16 +7,12 @@ class MainHeader extends HTMLElement {
   }
 
   async connectedCallback() {
-    // 1. Initial Render
     this.render();
 
-    // 2. Check for existing session
     const { data: { session } } = await supabase.auth.getSession();
-    // In Supabase, custom data from signup lives in session.user.user_metadata
     this.user = session?.user;
     this.render();
 
-    // 3. Listen for changes
     supabase.auth.onAuthStateChange((event, session) => {
       this.user = session?.user;
       this.render();
@@ -24,12 +20,15 @@ class MainHeader extends HTMLElement {
   }
 
   render() {
-    // Check if metadata exists, otherwise fallback to email or 'User'
     const displayName = this.user?.user_metadata?.username || this.user?.email || 'User';
 
     this.innerHTML = `
       <header class="bg-slate-800 text-white p-4 shadow-lg flex justify-between items-center w-full">
-        <h1 class="text-2xl font-bold tracking-tight">KJCA</h1>
+        <div class="flex items-center gap-3">
+          <img src="assets/logo.jpeg" alt="KJCA Logo" class="w-10 h-10 rounded-full object-cover border border-slate-600">
+          <h1 class="text-2xl font-bold tracking-tight">KJCA</h1>
+        </div>
+
         <nav class="flex gap-6 items-center">
           <a href="index.html" class="hover:text-blue-400 transition">Home</a>
           <a href="play.html" class="hover:text-blue-400 transition">Play</a>
