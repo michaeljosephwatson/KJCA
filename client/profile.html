@@ -1,27 +1,119 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
     <head> 
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>KJCA</title>
-
+        <title>My Profile | KJCA</title>
+        <link rel="icon" type="image/jpeg" href="assets/logo.jpeg">
         <script src="https://cdn.tailwindcss.com"></script>
         <script type="module" src="js/components/Header.js"></script>
         <script type="module" src="js/components/Footer.js"></script>
+        <style>
+            .news-headline { font-family: serif; line-height: 1.1; }
+        </style>
     </head>  
 
-    <body>
-
+    <body class="bg-[#f4f4f4] min-h-screen flex flex-col font-sans text-gray-900">
         <main-header></main-header>
 
-        <main class="flex-grow bg-gray-100 p-6">
-            <div class="max-w-5xl mx-auto flex justify-center">
-              
+        <section class="bg-white border-b">
+            <div class="max-w-4xl mx-auto px-4 py-8 md:py-12">
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-slate-900 news-headline mb-2">Member Profile</h1>
+                <p class="text-lg text-slate-600">Manage your account details and security settings.</p>
+            </div>
+        </section>
+
+        <main class="flex-grow max-w-4xl mx-auto w-full p-6 md:py-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <div class="md:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
+                        <div class="relative inline-block group">
+                            <img id="profile-avatar" src="assets/no-profile-pic.svg" class="w-32 h-32 rounded-full object-cover border-4 border-slate-100 shadow-inner mx-auto bg-slate-50">
+                            <label for="avatar-upload" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 shadow-lg transition-transform hover:scale-110">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <input type="file" id="avatar-upload" class="hidden" accept="image/*">
+                            </label>
+                        </div>
+                        <h2 id="profile-name" class="mt-4 text-xl font-bold text-slate-900">Loading...</h2>
+                        <p id="profile-role" class="text-xs font-black uppercase tracking-widest text-blue-600 mb-4 italic">Member</p>
+                    </div>
+
+                    <div class="bg-slate-900 text-white p-6 rounded-xl shadow-lg">
+                        <h3 class="font-bold text-sm uppercase tracking-widest text-slate-400 mb-4">Account Security</h3>
+                        <button id="show-pw-form" class="w-full text-left text-sm hover:text-blue-400 transition border-b border-slate-700 pb-2 mb-2">Change Password</button>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 space-y-8">
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-slate-800 p-4 text-white">
+                            <h3 class="font-bold uppercase tracking-widest text-xs italic">Personal Information</h3>
+                        </div>
+                        <div class="p-8">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Username</label>
+                                    <p id="info-username" class="text-slate-900 font-semibold border-b border-slate-100 pb-2">---</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Email Address</label>
+                                    <p id="info-email" class="text-slate-900 font-semibold border-b border-slate-100 pb-2">---</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Postcode</label>
+                                    <p id="info-postcode" class="text-slate-900 font-semibold border-b border-slate-100 pb-2">---</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Date of Birth</label>
+                                    <p id="info-dob" class="text-slate-900 font-semibold border-b border-slate-100 pb-2">---</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="password-section" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in slide-in-from-top duration-300">
+                        <div class="bg-slate-100 p-4 border-b">
+                            <h3 class="font-bold uppercase tracking-widest text-xs">Security Verification Required</h3>
+                        </div>
+                        <form id="password-form" class="p-8 space-y-5">
+                            <div class="max-w-xs space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-tight">Current Password</label>
+                                    <input type="password" id="current-password" class="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                                </div>
+                                
+                                <hr class="border-slate-100">
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-tight">New Password</label>
+                                    <input type="password" id="new-password" class="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Min. 6 characters" required minlength="6">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-tight">Confirm New Password</label>
+                                    <input type="password" id="confirm-password" class="w-full p-2 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-blue-500 outline-none" required minlength="6">
+                                </div>
+                            </div>
+
+                            <div id="pw-status" class="hidden text-sm font-bold p-3 rounded-md"></div>
+
+                            <div class="flex items-center gap-4 pt-2">
+                                <button type="submit" id="pw-submit-btn" class="bg-slate-800 text-white px-6 py-2 rounded text-sm font-bold hover:bg-slate-700 transition">Update Password</button>
+                                <button type="button" id="hide-pw-form" class="text-slate-400 text-xs hover:text-slate-600 uppercase font-bold tracking-widest">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </main>
         
         <main-footer></main-footer>
 
-        <script type="module" src="js/script.js"></script>
+        <script type="module" src="js/profile.js"></script>
     </body>
-
 </html>
