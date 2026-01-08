@@ -1,27 +1,95 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
     <head> 
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>KJCA</title>
-
+        <title>About Us | KJCA</title>
+        <link rel="icon" type="image/jpeg" href="assets/logo.jpeg">
         <script src="https://cdn.tailwindcss.com"></script>
         <script type="module" src="js/components/Header.js"></script>
         <script type="module" src="js/components/Footer.js"></script>
+        <style>
+            .news-headline { font-family: serif; line-height: 1.2; }
+            .dropcap::first-letter {
+                font-family: serif;
+                float: left;
+                font-size: 4rem;
+                line-height: 0.8;
+                padding-right: 0.5rem;
+                font-weight: 800;
+                color: #1e293b;
+            }
+        </style>
     </head>  
 
-    <body>
-
+    <body class="bg-[#f4f4f4] min-h-screen flex flex-col font-sans text-gray-900">
         <main-header></main-header>
 
-        <main class="flex-grow bg-gray-100 p-6">
-            <div class="max-w-5xl mx-auto flex justify-center">
-              
+        <section class="bg-white border-b">
+            <div class="max-w-4xl mx-auto px-4 py-12 md:py-20">
+                <p class="text-blue-600 font-bold uppercase tracking-widest text-xs mb-4">Our Mission</p>
+                <h1 class="text-5xl md:text-7xl font-extrabold tracking-tighter text-slate-900 news-headline mb-6">Developing the next generation of Kent chess.</h1>
+                <p class="text-xl text-slate-600 leading-relaxed italic">The Kent Junior Chess Association (KJCA) is a non-profit organization dedicated to fostering a love for chess among young players across Kent and South-East London.</p>
             </div>
+        </section>
+
+        <main class="flex-grow max-w-4xl mx-auto w-full p-6 md:p-12">
+            
+            <div class="bg-white p-8 md:p-16 rounded-xl shadow-sm border border-slate-200 space-y-10">
+                
+                <article class="prose prose-slate max-w-none">
+                    <h2 class="text-3xl font-black news-headline text-slate-900 mb-6">Who We Are</h2>
+                    <p class="text-lg leading-relaxed text-slate-700 dropcap">
+                        For decades, the KJCA has served as the heartbeat of junior chess in the county. We aren't just a tournament organizer; we are a community-led association responsible for the development of junior chess from the first tentative moves in a primary school club to international-level competition.
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-700 mt-4">
+                        We operate in close affiliation with the Kent County Chess Association (KCCA) and the English Chess Federation (ECF), ensuring that every child in Kent has a clear pathway to improve their game and represent their county at a national level.
+                    </p>
+                </article>
+
+                <hr class="border-slate-100">
+
+                <section>
+                    <h2 class="text-3xl font-black news-headline text-slate-900 mb-8">What We Do</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-3">
+                            <h3 class="font-bold text-slate-900 text-xl">The Grand Prix Series</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed">Our flagship annual competition. A series of tournaments held across the county where players earn points throughout the season to be crowned KJCA Champions.</p>
+                        </div>
+                        <div class="space-y-3">
+                            <h3 class="font-bold text-slate-900 text-xl">World-Class Coaching</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed">We run dedicated training days featuring some of the best junior coaches in the country, tailored to all levels from absolute beginners to advanced experts.</p>
+                        </div>
+                        <div class="space-y-3">
+                            <h3 class="font-bold text-slate-900 text-xl">County Representation</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed">We select and manage the Kent junior teams that compete in the EPSCA and ECF national championships, continuing Kent's proud history of success.</p>
+                        </div>
+                        <div class="space-y-3">
+                            <h3 class="font-bold text-slate-900 text-xl">ECF Rating</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed">All our tournament games are officially rated by the English Chess Federation, allowing juniors to track their progress and see their national standing improve.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="border-slate-100">
+
+                <section class="bg-slate-50 p-8 rounded-lg border-l-4 border-slate-800">
+                    <h2 class="text-2xl font-bold news-headline mb-4">A Safe Place to Play</h2>
+                    <p class="text-slate-700 leading-relaxed italic text-sm">
+                        "The KJCA is committed to providing a safe, inclusive, and encouraging environment. We adopt full ECF Safeguarding policies and work closely with venues like Sevenoaks School and Chislehurst School for Girls to ensure our events meet the highest standards for our young players and their families."
+                    </p>
+                </section>
+            </div>
+
+            <div class="mt-12 text-center">
+                <p class="text-slate-500 font-medium mb-4">Ready to join the community?</p>
+                <a href="index.html" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-lg font-bold hover:bg-slate-800 transition shadow-lg">View Upcoming Tournaments</a>
+            </div>
+
         </main>
         
         <main-footer></main-footer>
 
         <script type="module" src="js/script.js"></script>
     </body>
-
 </html>
