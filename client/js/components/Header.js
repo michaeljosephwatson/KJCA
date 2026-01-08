@@ -12,6 +12,7 @@ class MainHeader extends HTMLElement {
 
     // 2. Check for existing session
     const { data: { session } } = await supabase.auth.getSession();
+    // In Supabase, custom data from signup lives in session.user.user_metadata
     this.user = session?.user;
     this.render();
 
@@ -23,9 +24,12 @@ class MainHeader extends HTMLElement {
   }
 
   render() {
+    // Check if metadata exists, otherwise fallback to email or 'User'
+    const displayName = this.user?.user_metadata?.username || this.user?.email || 'User';
+
     this.innerHTML = `
       <header class="bg-slate-800 text-white p-4 shadow-lg flex justify-between items-center w-full">
-        <h1 class="text-2xl font-bold tracking-tight">KJCA CHESS</h1>
+        <h1 class="text-2xl font-bold tracking-tight">KJCA</h1>
         <nav class="flex gap-6 items-center">
           <a href="index.html" class="hover:text-blue-400 transition">Home</a>
           <a href="play.html" class="hover:text-blue-400 transition">Play</a>
@@ -33,7 +37,7 @@ class MainHeader extends HTMLElement {
           
           ${this.user ? `
             <div class="flex items-center gap-4 border-l border-slate-600 pl-6">
-              <span class="text-gray-400 text-sm hidden md:inline">${this.user.email}</span>
+              <span class="text-gray-400 text-sm hidden md:inline font-medium">Hi, ${displayName}</span>
               <button id="logout-btn" class="bg-red-600 px-3 py-1 rounded text-sm hover:bg-red-700 transition">Logout</button>
             </div>
           ` : `
