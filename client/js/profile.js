@@ -9,8 +9,15 @@ const pwStatus = document.getElementById('pw-status');
 const showPwBtn = document.getElementById('show-pw-form');
 const hidePwBtn = document.getElementById('hide-pw-form');
 
+// Deletion Elements
+const deleteInitial = document.getElementById('delete-initial');
+const deleteConfirmPanel = document.getElementById('delete-confirm-panel');
+const showDeleteBtn = document.getElementById('show-delete-confirm');
+const cancelDeleteBtn = document.getElementById('cancel-delete');
+const executeDeleteBtn = document.getElementById('execute-delete');
+
 /**
- * HELPER: In-page status feedback
+ * HELPER: UI Feedback
  */
 function showStatus(message, isError = true) {
     pwStatus.innerText = message;
@@ -23,7 +30,7 @@ function showStatus(message, isError = true) {
 }
 
 /**
- * INITIAL LOAD: Fetch profile and handle default avatar
+ * DATA LOAD: Profile Information
  */
 async function loadProfile() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -40,24 +47,22 @@ async function loadProfile() {
 
     if (error) return console.error("Profile load error:", error.message);
 
-    // Populate UI
+    // Sidebar Info
     document.getElementById('profile-name').innerText = profile.username || 'User';
     document.getElementById('profile-role').innerText = profile.type || 'Member';
+    avatarImg.src = profile.avatar_url || 'assets/no-profile-pic.svg';
+
+    // Main Info Grid
     document.getElementById('info-username').innerText = profile.username || '---';
     document.getElementById('info-email').innerText = session.user.email;
+    document.getElementById('info-ecf').innerText = profile.ecf_code || 'Not Provided';
+    document.getElementById('info-fide').innerText = profile.fide_code || 'Not Provided';
     document.getElementById('info-postcode').innerText = profile.postcode || '---';
     document.getElementById('info-dob').innerText = profile.dob ? new Date(profile.dob).toLocaleDateString('en-GB') : '---';
-
-    // FALLBACK LOGIC: Use user's photo or the default SVG asset
-    if (profile.avatar_url) {
-        avatarImg.src = profile.avatar_url;
-    } else {
-        avatarImg.src = 'assets/no-profile-pic.svg';
-    }
 }
 
 /**
- * PASSWORD UPDATE: Secure identity-verification workflow
+ * SECURITY: Password Management
  */
 showPwBtn.onclick = () => {
     passwordSection.classList.remove('hidden');
@@ -82,23 +87,20 @@ passwordForm.onsubmit = async (e) => {
 
     submitBtn.disabled = true;
     submitBtn.innerText = "Verifying Identity...";
-    pwStatus.classList.add('hidden');
 
     try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        // Step 1: Verify current password
+        // 1. Re-authenticate
         const { error: signInError } = await supabase.auth.signInWithPassword({
             email: session.user.email,
             password: currentPassword,
         });
 
-        if (signInError) throw new Error("Verification failed: Current password is incorrect.");
+        if (signInError) throw new Error("Incorrect current password.");
 
-        // Step 2: Save new password
-        submitBtn.innerText = "Saving New Password...";
+        // 2. Update
         const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-
         if (updateError) throw updateError;
 
         showStatus("Password updated successfully!", false);
@@ -116,7 +118,7 @@ passwordForm.onsubmit = async (e) => {
 };
 
 /**
- * AVATAR UPLOAD: Storage upload & DB update
+ * ASSETS: Avatar Upload
  */
 avatarInput.onchange = async (e) => {
     const file = e.target.files[0];
@@ -125,8 +127,7 @@ avatarInput.onchange = async (e) => {
     try {
         const { data: { session } } = await supabase.auth.getSession();
         const userId = session.user.id;
-        const fileName = `${userId}-${Date.now()}.${file.name.split('.').pop()}`;
-        const filePath = `avatars/${fileName}`;
+        const filePath = `avatars/${userId}-${Date.now()}`;
 
         const { error: uploadError } = await supabase.storage
             .from('tournament-images') 
@@ -138,17 +139,43 @@ avatarInput.onchange = async (e) => {
             .from('tournament-images')
             .getPublicUrl(filePath);
 
-        const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ avatar_url: publicUrl })
-            .eq('id', userId);
-
-        if (updateError) throw updateError;
-
+        await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
         avatarImg.src = publicUrl;
 
     } catch (err) {
         console.error("Upload Error: " + err.message);
+    }
+};
+
+/**
+ * DANGER ZONE: Account Deletion
+ */
+showDeleteBtn.onclick = () => {
+    deleteInitial.classList.add('hidden');
+    deleteConfirmPanel.classList.remove('hidden');
+};
+
+cancelDeleteBtn.onclick = () => {
+    deleteInitial.classList.remove('hidden');
+    deleteConfirmPanel.classList.add('hidden');
+};
+
+executeDeleteBtn.onclick = async () => {
+    executeDeleteBtn.disabled = true;
+    executeDeleteBtn.innerText = "Wiping Data...";
+
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        // Deleting the profile row will trigger the SQL function to wipe the Auth record
+        const { error } = await supabase.from('profiles').delete().eq('id', session.user.id);
+        if (error) throw error;
+
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+    } catch (err) {
+        alert("Error: " + err.message);
+        executeDeleteBtn.disabled = false;
+        executeDeleteBtn.innerText = "Yes, Delete Everything";
     }
 };
 
