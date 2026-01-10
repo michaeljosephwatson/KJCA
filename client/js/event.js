@@ -57,20 +57,20 @@ async function renderEvent(event, type) {
                             ${event.description || 'No description provided for this event.'}
                         </p>
                     </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Players Interested</p>
+                            <h4 id="interest-count" class="text-4xl font-black text-slate-900 mt-1">0</h4>
+                        </div>
+                        <div class="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full">
+                            <span class="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping"></span>
+                            <span class="text-xs font-bold text-green-700 uppercase tracking-tight">Live Activity</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="space-y-6">
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center justify-between">
-                        <div>
-                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Interest</p>
-                            <h4 id="interest-count" class="text-4xl font-black text-slate-900 mt-1">0</h4>
-                        </div>
-                        <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
-                            <span class="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
-                            <span class="text-[10px] font-bold text-green-700 uppercase">Live</span>
-                        </div>
-                    </div>
-
                     <div class="bg-slate-900 text-white p-8 rounded-3xl shadow-xl">
                         <h3 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Key Information</h3>
                         <div class="space-y-6">
@@ -86,7 +86,13 @@ async function renderEvent(event, type) {
                             </div>
                             ` : ''}
 
-                            <div class="pt-4">
+                            <div class="pt-4 space-y-3">
+                                ${event.registration_link ? `
+                                    <a href="${event.registration_link}" target="_blank" class="block w-full text-center bg-white text-slate-900 font-black py-4 rounded-xl transition-all shadow-lg uppercase tracking-wider text-sm hover:bg-slate-100 border-2 border-white">
+                                        Enter Tournament Online
+                                    </a>
+                                ` : ''}
+
                                 ${currentUser ? `
                                     <button id="register-interest-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl transition-all shadow-lg uppercase tracking-wider text-sm">
                                         Register Interest
@@ -156,7 +162,6 @@ async function setupRegistration(eventId, type, userId) {
         }
     };
 
-    // Initial database check
     const { data: existing } = await supabase
         .from('registrations')
         .select('*')

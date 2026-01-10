@@ -47,7 +47,7 @@ async function refreshAllFeeds() {
 }
 
 /**
- * FEATURED: Large Hero Tournament (Updated to be clickable)
+ * FEATURED: Large Hero Tournament
  */
 async function fetchFeaturedTournament() {
     if (!featuredContainer) return;
@@ -70,14 +70,14 @@ async function fetchFeaturedTournament() {
     const isOwner = currentUserId === data.organizer_id;
 
     featuredContainer.innerHTML = `
-        <div class="relative group block bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 hover:shadow-blue-100 featured-card">
+        <div class="relative group block bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 hover:shadow-blue-100">
             ${isOwner ? `<button onclick="handleDelete(event, ${data.id}, '${data.image_url}', 'tournaments')" class="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-full hover:bg-red-700 z-20 shadow-lg transition opacity-0 group-hover:opacity-100">✕</button>` : ''}
             <a href="event.html?id=${data.id}&type=tournaments" class="block">
                 <img class="w-full h-[400px] object-cover" src="${data.image_url || 'assets/landscape-placeholder.svg'}" alt="Featured">
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
                 <div class="absolute bottom-0 p-8 text-white w-full">
                     <p class="text-blue-400 font-black mb-2 uppercase tracking-tighter italic">Next Major Event — ${new Date(data.date).toLocaleDateString('en-GB')}</p>
-                    <h3 class="text-4xl md:text-5xl font-black news-headline mb-4 transition-colors">${data.title}</h3>
+                    <h3 class="text-4xl md:text-5xl font-black news-headline mb-4">${data.title}</h3>
                     <p class="text-slate-200 text-lg line-clamp-2 max-w-3xl">${data.description || 'Kent Junior Chess Premier Event.'}</p>
                 </div>
             </a>
@@ -86,7 +86,7 @@ async function fetchFeaturedTournament() {
 }
 
 /**
- * TOURNAMENTS
+ * TOURNAMENTS: Card style
  */
 async function fetchTournaments() {
     if (!tournamentContainer) return;
@@ -121,7 +121,7 @@ async function fetchTournaments() {
 }
 
 /**
- * TRAININGS
+ * TRAININGS: Card style
  */
 async function fetchTrainings() {
     if (!trainingsContainer) return;
@@ -205,6 +205,7 @@ postForm.onsubmit = async (e) => {
     const date = document.getElementById('p-date').value;
     const desc = document.getElementById('p-desc').value;
     const loc = document.getElementById('p-location').value;
+    const regLink = document.getElementById('p-link').value; // NEW
     const imgFile = document.getElementById('p-image-file').files[0];
 
     try {
@@ -219,7 +220,15 @@ postForm.onsubmit = async (e) => {
             finalImg = publicUrl;
         }
 
-        const payload = { title, date, description: desc, image_url: finalImg, organizer_id: session.user.id };
+        const payload = { 
+            title, 
+            date, 
+            description: desc, 
+            image_url: finalImg, 
+            organizer_id: session.user.id,
+            registration_link: regLink // Capture the link
+        };
+        
         if (type === 'trainings') payload.location = loc;
 
         const { error } = await supabase.from(type).insert([payload]);
@@ -240,7 +249,9 @@ postForm.onsubmit = async (e) => {
 window.handleDelete = async (event, id, imageUrl, table) => {
     event.stopPropagation();
     event.preventDefault();
+    
     if (!confirm(`Permanently delete from ${table}?`)) return;
+    
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (!error) {
         if (imageUrl?.includes('tournament-images')) {
