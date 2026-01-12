@@ -26,7 +26,7 @@ class MainHeader extends HTMLElement {
       <header class="bg-slate-800 text-white p-4 shadow-lg flex justify-between items-center w-full">
         <div class="flex items-center gap-3">
           <img src="assets/logo.jpeg" alt="KJCA Logo" class="w-10 h-10 rounded-full object-cover border border-slate-600">
-          <h1 class="text-2xl font-bold tracking-tight">KJCA</h1>
+          <h1 class="text-2xl font-bold tracking-tight">Kent Junior Chess Association</h1>
         </div>
 
         <nav class="flex gap-6 items-center">
