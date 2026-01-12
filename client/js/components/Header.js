@@ -31,6 +31,7 @@ class MainHeader extends HTMLElement {
 
         <nav class="flex gap-6 items-center">
           <a href="index.html" class="hover:text-blue-400 transition">Home</a>
+          <a href="news.html" class="hover:text-blue-400 transition">KJCA News</a>
           <a href="play.html" class="hover:text-blue-400 transition">Play</a>
           <a href="analysis.html" class="hover:text-blue-400 transition">Analysis</a>
           

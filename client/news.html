@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News & Updates | KJCA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="js/components/Header.js"></script>
+    <script type="module" src="js/components/Footer.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col font-sans">
+    <main-header></main-header>
+
+    <main class="flex-grow max-w-4xl mx-auto w-full p-6 py-12">
+        <div class="flex justify-between items-end mb-10 border-b-4 border-slate-800 pb-4">
+            <div>
+                <h1 class="text-5xl font-black tracking-tighter text-slate-900 uppercase">KJCA News</h1>
+                <p class="text-slate-500 font-bold uppercase tracking-widest text-xs mt-2 italic">Updates, Results & Announcements</p>
+            </div>
+            <button id="add-news-btn" class="hidden bg-slate-900 text-white px-5 py-2 rounded-full font-bold hover:bg-blue-600 transition-all text-sm shadow-lg">
+                + Post Article
+            </button>
+        </div>
+
+        <div id="news-feed" class="space-y-12">
+            <div class="text-center py-20 text-slate-400 italic">Gathering latest stories...</div>
+        </div>
+    </main>
+
+    <div id="news-modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div class="bg-slate-800 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold uppercase tracking-tight text-sm">Create News Article</h3>
+                <button id="close-modal" class="text-slate-400 hover:text-white transition-colors text-xl">✕</button>
+            </div>
+            <form id="news-form" class="p-6 space-y-4">
+                <input type="text" id="news-title" placeholder="Article Title" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required>
+                
+                <div class="bg-slate-50 p-3 border border-slate-200 rounded-lg">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Article Header Image</label>
+                    <input type="file" id="news-image-file" accept="image/*" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p id="edit-img-note" class="text-[9px] text-blue-600 mt-1 hidden italic">Leave blank to keep current image</p>
+                </div>
+
+                <input type="text" id="news-tagline" placeholder="Short tagline or summary" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required>
+                <textarea id="news-content" placeholder="Write your article here..." rows="6" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required></textarea>
+                
+                <button type="submit" id="submit-news-btn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-md uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed">
+                    Publish News
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <main-footer></main-footer>
+    <script type="module" src="js/news.js"></script>
+</body>
+</html>
