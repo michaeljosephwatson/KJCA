@@ -70,21 +70,23 @@ async function fetchFeaturedTournament() {
     const isOwner = currentUserId === data.organizer_id;
 
     featuredContainer.innerHTML = `
-        <div class="relative group block bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 hover:shadow-blue-100">
-            ${isOwner ? `<button onclick="deleteEntry(${data.id}, '${data.image_url}', 'tournaments')" class="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-full hover:bg-red-700 z-20 shadow-lg transition opacity-0 group-hover:opacity-100">✕</button>` : ''}
-            <img class="w-full h-[400px] object-cover" src="${data.image_url || 'assets/landscape-placeholder.svg'}" alt="Featured">
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
-            <div class="absolute bottom-0 p-8 text-white w-full">
-                <p class="text-blue-400 font-black mb-2 uppercase tracking-tighter italic">Next Major Event — ${new Date(data.date).toLocaleDateString('en-GB')}</p>
-                <h3 class="text-4xl md:text-5xl font-black news-headline mb-4">${data.title}</h3>
-                <p class="text-slate-200 text-lg line-clamp-2 max-w-3xl">${data.description || 'Kent Junior Chess Premier Event.'}</p>
-            </div>
+        <div class="relative group block bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 hover:shadow-blue-100 featured-card">
+            ${isOwner ? `<button onclick="handleDelete(event, ${data.id}, '${data.image_url}', 'tournaments')" class="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-full hover:bg-red-700 z-20 shadow-lg transition opacity-0 group-hover:opacity-100">✕</button>` : ''}
+            <a href="event.html?id=${data.id}&type=tournaments" class="block">
+                <img class="w-full h-[400px] object-cover" src="${data.image_url || 'assets/landscape-placeholder.svg'}" alt="Featured">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+                <div class="absolute bottom-0 p-8 text-white w-full">
+                    <p class="text-blue-400 font-black mb-2 uppercase tracking-tighter italic">Next Major Event — ${new Date(data.date).toLocaleDateString('en-GB')}</p>
+                    <h3 class="text-4xl md:text-5xl font-black news-headline mb-4">${data.title}</h3>
+                    <p class="text-slate-200 text-lg line-clamp-2 max-w-3xl">${data.description || 'Kent Junior Chess Premier Event.'}</p>
+                </div>
+            </a>
         </div>
     `;
 }
 
 /**
- * TOURNAMENTS: Updated to match Training Card style
+ * TOURNAMENTS: Card style
  */
 async function fetchTournaments() {
     if (!tournamentContainer) return;
@@ -101,23 +103,25 @@ async function fetchTournaments() {
     tournamentContainer.innerHTML = data.slice(1).map(item => {
         const isOwner = currentUserId === item.organizer_id;
         return `
-            <div class="relative group block border-b pb-4 hover:bg-white p-2 rounded-lg transition-all">
-                ${isOwner ? `<button onclick="deleteEntry(${item.id}, '${item.image_url}', 'tournaments')" class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-[10px] z-10 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>` : ''}
-                <div class="overflow-hidden rounded-lg mb-3 h-40">
-                    <img class="w-full h-full object-cover group-hover:scale-105 transition duration-500" src="${item.image_url || 'assets/landscape-placeholder.svg'}">
-                </div>
-                <h4 class="font-bold text-lg leading-tight group-hover:text-blue-700">${item.title}</h4>
-                <div class="flex justify-between items-center mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    <span>${new Date(item.date).toLocaleDateString('en-GB')}</span>
-                    <span class="text-blue-600">TOURNAMENT</span>
-                </div>
+            <div class="relative group block border-b pb-4 hover:bg-white p-2 rounded-lg transition-all event-card">
+                ${isOwner ? `<button onclick="handleDelete(event, ${item.id}, '${item.image_url}', 'tournaments')" class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-[10px] z-10 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>` : ''}
+                <a href="event.html?id=${item.id}&type=tournaments" class="block">
+                    <div class="overflow-hidden rounded-lg mb-3 h-40">
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition duration-500" src="${item.image_url || 'assets/landscape-placeholder.svg'}">
+                    </div>
+                    <h4 class="font-bold text-lg leading-tight text-gray-900 transition-colors">${item.title}</h4>
+                    <div class="flex justify-between items-center mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        <span>${new Date(item.date).toLocaleDateString('en-GB')}</span>
+                        <span class="text-blue-600">TOURNAMENT</span>
+                    </div>
+                </a>
             </div>
         `;
     }).join('');
 }
 
 /**
- * TRAININGS: Standard card style
+ * TRAININGS: Card style
  */
 async function fetchTrainings() {
     if (!trainingsContainer) return;
@@ -134,16 +138,18 @@ async function fetchTrainings() {
     trainingsContainer.innerHTML = data.map(item => {
         const isOwner = currentUserId === item.organizer_id;
         return `
-            <div class="relative group block border-b pb-4 transition-all hover:bg-white p-2 rounded-lg">
-                ${isOwner ? `<button onclick="deleteEntry(${item.id}, '${item.image_url}', 'trainings')" class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-[10px] z-10 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>` : ''}
-                <div class="overflow-hidden rounded-lg mb-3 h-40">
-                    <img class="w-full h-full object-cover group-hover:scale-105 transition duration-500" src="${item.image_url || 'assets/landscape-placeholder.svg'}">
-                </div>
-                <h4 class="font-bold text-lg leading-tight group-hover:text-blue-700">${item.title}</h4>
-                <div class="flex justify-between items-center mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    <span>${new Date(item.date).toLocaleDateString('en-GB')}</span>
-                    <span class="text-blue-600">${item.location || 'KENT'}</span>
-                </div>
+            <div class="relative group block border-b pb-4 transition-all hover:bg-white p-2 rounded-lg event-card">
+                ${isOwner ? `<button onclick="handleDelete(event, ${item.id}, '${item.image_url}', 'trainings')" class="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full text-[10px] z-10 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>` : ''}
+                <a href="event.html?id=${item.id}&type=trainings" class="block">
+                    <div class="overflow-hidden rounded-lg mb-3 h-40">
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition duration-500" src="${item.image_url || 'assets/landscape-placeholder.svg'}">
+                    </div>
+                    <h4 class="font-bold text-lg leading-tight text-gray-900 transition-colors">${item.title}</h4>
+                    <div class="flex justify-between items-center mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        <span>${new Date(item.date).toLocaleDateString('en-GB')}</span>
+                        <span class="text-blue-600">${item.location || 'KENT'}</span>
+                    </div>
+                </a>
             </div>
         `;
     }).join('');
@@ -199,6 +205,7 @@ postForm.onsubmit = async (e) => {
     const date = document.getElementById('p-date').value;
     const desc = document.getElementById('p-desc').value;
     const loc = document.getElementById('p-location').value;
+    const regLink = document.getElementById('p-link').value;
     const imgFile = document.getElementById('p-image-file').files[0];
 
     try {
@@ -213,7 +220,7 @@ postForm.onsubmit = async (e) => {
             finalImg = publicUrl;
         }
 
-        const payload = { title, date, description: desc, image_url: finalImg, organizer_id: session.user.id };
+        const payload = { title, date, description: desc, image_url: finalImg, organizer_id: session.user.id, registration_link: regLink };
         if (type === 'trainings') payload.location = loc;
 
         const { error } = await supabase.from(type).insert([payload]);
@@ -231,16 +238,23 @@ postForm.onsubmit = async (e) => {
 /**
  * DELETE
  */
-window.deleteEntry = async (id, imageUrl, table) => {
+window.handleDelete = async (event, id, imageUrl, table) => {
+    event.stopPropagation();
+    event.preventDefault();
+    
     if (!confirm(`Permanently delete from ${table}?`)) return;
+    
     const { error } = await supabase.from(table).delete().eq('id', id);
-    if (!error) {
-        if (imageUrl?.includes('tournament-images')) {
-            const fileName = imageUrl.split('/').pop();
-            await supabase.storage.from('tournament-images').remove([`tournament-photos/${fileName}`]);
-        }
-        refreshAllFeeds();
+    if (error) {
+        alert(`Error deleting: ${error.message}`);
+        return;
     }
+
+    if (imageUrl && imageUrl.includes('tournament-images')) {
+        const fileName = imageUrl.split('/').pop();
+        await supabase.storage.from('tournament-images').remove([`tournament-photos/${fileName}`]);
+    }
+    refreshAllFeeds();
 };
 
 document.getElementById('close-modal').onclick = () => postModal.classList.add('hidden');

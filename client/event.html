@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head> 
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Event Details | KJCA</title>
+        <link rel="icon" type="image/png" href="assets/logo.jpeg">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script type="module" src="js/components/Header.js"></script>
+        <script type="module" src="js/components/Footer.js"></script>
+        <style>
+            .news-headline { font-family: serif; line-height: 1.1; }
+        </style>
+    </head>  
+
+    <body class="bg-[#f4f4f4] min-h-screen flex flex-col font-sans text-gray-900">
+        <main-header></main-header>
+
+        <main id="event-content" class="flex-grow">
+            <div class="max-w-5xl mx-auto p-6 animate-pulse">
+                <div class="h-96 bg-gray-200 rounded-2xl mb-8"></div>
+                <div class="h-10 bg-gray-200 w-3/4 mb-4"></div>
+                <div class="h-4 bg-gray-200 w-1/2"></div>
+            </div>
+        </main>
+        
+        <main-footer></main-footer>
+
+        <script type="module" src="js/event.js"></script>
+    </body>
+</html>
